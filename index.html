@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Hangman Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+        }
+        .game-container {
+            max-width: 600px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        canvas {
+            background: white;
+            display: block;
+            margin: 20px auto;
+            border: 2px solid black;
+        }
+        #keyboard button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 18px;
+            border: none;
+            background: #ffcc00;
+            color: black;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        #keyboard button:hover {
+            transform: scale(1.1);
+        }
+        #score, #high-score {
+            font-size: 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>3D Hangman Game</h1>
+        <canvas id="hangmanCanvas" width="300" height="300"></canvas>
+        <p id="word-display"></p>
+        <p id="hint"></p>
+        <div id="keyboard"></div>
+        <p id="message"></p>
+        <p id="score">Score: 0</p>
+        <p id="high-score">High Score: 0</p>
+    </div>
+    <script>
+        const wordsWithHints = {
+            "JAVASCRIPT": "A popular programming language for web development",
+            "PYTHON": "A widely-used high-level programming language",
+            "CODING": "The process of writing instructions for computers",
+            "DEVELOPER": "A person who creates software applications",
+            "HANGMAN": "A classic word-guessing game",
+            "ALGORITHM": "A step-by-step procedure to solve a problem",
+            "DATABASE": "A structured set of data stored electronically",
+            "FUNCTION": "A reusable block of code in programming"
+        };
+
+        let selectedWord, guessedLetters, wrongGuesses, score = 0;
+        let highScore = localStorage.getItem("highScore") || 0;
+        const wordDisplay = document.getElementById("word-display");
+        const hintDisplay = document.getElementById("hint");
+        const keyboard = document.getElementById("keyboard");
+        const message = document.getElementById("message");
+        const scoreDisplay = document.getElementById("score");
+        const highScoreDisplay = document.getElementById("high-score");
+        const canvas = document.getElementById("hangmanCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        function drawHangman() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(50, 280);
+            ctx.lineTo(250, 280);
+            if (wrongGuesses > 0) ctx.lineTo(150, 250);
+            if (wrongGuesses > 1) ctx.moveTo(150, 250), ctx.lineTo(150, 50);
+            if (wrongGuesses > 2) ctx.lineTo(200, 50);
+            if (wrongGuesses > 3) ctx.lineTo(200, 80);
+            if (wrongGuesses > 4) ctx.arc(200, 100, 20, 0, Math.PI * 2);
+            if (wrongGuesses > 5) ctx.moveTo(200, 120), ctx.lineTo(200, 180);
+            ctx.stroke();
+        }
+
+        function updateWordDisplay() {
+            wordDisplay.textContent = selectedWord.split('').map(letter => guessedLetters.includes(letter) ? letter : "_").join(" ");
+            if (!wordDisplay.textContent.includes("_")) {
+                score += 10;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("highScore", highScore);
+                }
+                scoreDisplay.textContent = "Score: " + score;
+                highScoreDisplay.textContent = "High Score: " + highScore;
+                setTimeout(resetGame, 2000);
+            }
+        }
+
+        function handleGuess(letter) {
+            if (guessedLetters.includes(letter) || wrongGuesses >= 6) return;
+            guessedLetters.push(letter);
+            
+            if (!selectedWord.includes(letter)) {
+                wrongGuesses++;
+                drawHangman();
+                if (wrongGuesses >= 6) {
+                    message.textContent = "Game Over! The word was: " + selectedWord;
+                    score = 0;
+                    setTimeout(resetGame, 2000);
+                }
+            }
+            updateWordDisplay();
+            scoreDisplay.textContent = "Score: " + score;
+        }
+
+        function resetGame() {
+            selectedWord = Object.keys(wordsWithHints)[Math.floor(Math.random() * Object.keys(wordsWithHints).length)];
+            guessedLetters = [];
+            wrongGuesses = 0;
+            hintDisplay.textContent = "Hint: " + wordsWithHints[selectedWord];
+            message.textContent = "";
+            updateWordDisplay();
+            drawHangman();
+        }
+
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(letter => {
+            const button = document.createElement("button");
+            button.textContent = letter;
+            button.addEventListener("click", () => handleGuess(letter));
+            keyboard.appendChild(button);
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>
